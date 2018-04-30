@@ -1,0 +1,49 @@
+.header {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+  
+  .footer {
+    border-top: 1px solid #444;
+    padding-top: 20px;
+    margin-top: 20px;
+    color: #999
+  }
+  
+  .p {
+    text-align: center;
+    padding-top: 120px;
+  }
+  
+  .p a {
+    text-decoration: underline;
+    color: blue;
+  }
+  
+  #transport {
+    font-family: Helvetica, Arial, sans-serif; /*fix*/
+    background-color: #303030;
+    color: white;
+  }
+
+  #transport h3 {
+    font-weight: bold;
+    margin: 1em;
+    font-size: 22px;
+
+  }
+
+  .job-card {
+    border: 2px solid white;
+    padding: 1em;
+    margin-bottom: 1em;
+    font-size: 15px;
+  }
+
+  .job-card p {
+    margin: 0 0 0.25em 0;
+  }
+
+  .job-card b{
+    opacity: 0.35;
+  }
