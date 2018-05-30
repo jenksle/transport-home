@@ -26,19 +26,17 @@ type Config struct {
 type report struct {
 	TransportID    int
 	ActionFlag     string
-	JobNo          int
+	JobNo          string
 	Customer       string
 	Department     string
 	JobDescription string
 	TransportDate  string
 	DateDiff       int
+	ServiceType    string
 }
 
 type data struct {
-	ReportsCollect       []report
-	ReportsDeliver       []report
-	ReportsCollectFuture []report
-	ReportsDeliverFuture []report
+	Reports []report
 }
 
 var config Config
@@ -102,10 +100,10 @@ func home(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	var output data
 
-	sql := `SELECT action_flag, job_no, customer, department, job_description, COALESCE(CONVERT(NVARCHAR(11), transport_date, 106), '-'), datediff(d, cast(current_timestamp as date), cast(transport_date as date))
+	sql := `SELECT action_flag, job_no, customer, department, job_description, COALESCE(CONVERT(NVARCHAR(11), transport_date, 106), '-'), service_type
 			 FROM transport
-			 WHERE is_active = 'Y'
-			 ORDER BY transport_date DESC`
+			WHERE is_active = 'Y'
+			ORDER BY transport_date ASC`
 
 	rows, err := db.Query(sql)
 	if err != nil {
@@ -115,21 +113,16 @@ func home(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	fmt.Println("sql executed")
 
-	output.ReportsCollect = make([]report, 0)
-	output.ReportsDeliver = make([]report, 0)
-	output.ReportsCollectFuture = make([]report, 0)
-	output.ReportsDeliverFuture = make([]report, 0)
+	output.Reports = make([]report, 0)
 
 	for rows.Next() {
 
 		var r report
 
-		err := rows.Scan(&r.ActionFlag, &r.JobNo, &r.Customer, &r.Department, &r.JobDescription, &r.TransportDate, &r.DateDiff)
+		err := rows.Scan(&r.ActionFlag, &r.JobNo, &r.Customer, &r.Department, &r.JobDescription, &r.TransportDate, &r.ServiceType)
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		fmt.Println(r.DateDiff)
 
 		if r.Department == "EL" {
 			r.Department = "Electrical"
@@ -141,30 +134,24 @@ func home(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			r.Department = "Hi-Cycle"
 		} else if r.Department == "BA" {
 			r.Department = "Balancing"
+		}
+
+		if r.ServiceType == "E" {
+			r.ServiceType = "Emergency"
 		} else {
-			r.Department = "?"
+			r.ServiceType = "Regular"
 		}
 
 		if r.ActionFlag == "C" {
-			//if the collection date is today
-			if r.DateDiff == 0 {
-				output.ReportsCollect = append(output.ReportsCollect, r)
-				//else append to ReportsCollectFuture
-			} else if r.DateDiff > 0 {
-				output.ReportsCollectFuture = append(output.ReportsCollectFuture, r)
-			}
-
+			r.ActionFlag = "Collect"
 		} else if r.ActionFlag == "D" {
-			if r.DateDiff == 0 {
-				//if the delivery date is today
-				output.ReportsDeliver = append(output.ReportsDeliver, r)
-				//else append to ReportsDeliverFuture
-			} else if r.DateDiff > 0 {
-				output.ReportsDeliverFuture = append(output.ReportsDeliverFuture, r)
-			}
-
+			r.ActionFlag = "Deliver"
 		}
+
+		output.Reports = append(output.Reports, r)
+
 	}
+
 	t, err := template.ParseFiles("assets/templates/home.tpl")
 	if err != nil {
 		log.Fatal(err)
